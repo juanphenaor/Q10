@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Orders.Api.Middlewares;
 using Orders.Application.Handlers;
+using Orders.Infrastructure.Context;
 using Orders.Infrastructure.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +17,13 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
+
+    await context.Database.MigrateAsync();
+}
 
 app.UseHttpsRedirection();
 

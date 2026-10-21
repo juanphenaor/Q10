@@ -20,6 +20,13 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<InventoryDbContext>();
+
+    await context.Database.MigrateAsync();
+}
+
 await SeedDevelopmentProductsAsync(app);
 
 app.UseHttpsRedirection();

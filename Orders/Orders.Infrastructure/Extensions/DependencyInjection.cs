@@ -2,9 +2,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Orders.Application.Contracts;
-using Orders.Infrastructure.Clients;
 using Orders.Infrastructure.Context;
 using Orders.Infrastructure.Repositories;
+using Orders.Infrastructure.Services;
 
 namespace Orders.Infrastructure.Extensions
 {
@@ -17,12 +17,8 @@ namespace Orders.Infrastructure.Extensions
 
             services.AddDbContext<OrdersDbContext>(options => options.UseNpgsql(connectionString));
 
+            services.AddHostedService<OutboxPublisher>();
             services.AddScoped<IOrderRepository, OrderRepository>();
-
-            services.AddHttpClient<IInventoryClient, InventoryClient>(client =>
-            {
-                client.BaseAddress = new Uri(configuration["Inventory:BaseUrl"] ?? throw new InvalidOperationException("La URL base de Inventory no está configurada."));
-            });
 
             return services;
         }

@@ -1,0 +1,81 @@
+services:
+  orders:
+    build:
+      context: .
+      dockerfile: Orders/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__OrdersDatabase: "Host=orders-db;Port=5432;Database=OrdersDb;Username=postgres;Password=${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: orderflow
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:?Define RABBITMQ_PASSWORD en .env}
+      Inventory__BaseUrl: "http://inventory:8080/"
+    ports:
+      - "8081:8080"
+    depends_on:
+      orders-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  orders-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: OrdersDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+    volumes:
+      - orders-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d OrdersDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  inventory:
+    build:
+      context: .
+      dockerfile: Inventory/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__InventoryDatabase: "Host=inventory-db;Port=5432;Database=InventoryDb;Username=postgres;Password=${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}"
+    ports:
+      - "8082:8080"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+
+  inventory-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: InventoryDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+    volumes:
+      - inventory-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d InventoryDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: orderflow
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Define RABBITMQ_PASSWORD en .env}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  orders-data:
+  inventory-data:
+  rabbitmq-data:

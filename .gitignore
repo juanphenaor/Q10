@@ -8,3 +8,4 @@
 # .NET build artifacts
 **/bin/
 **/obj/
+/.env
