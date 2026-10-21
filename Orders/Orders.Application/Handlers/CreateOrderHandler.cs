@@ -17,10 +17,11 @@ public class CreateOrderHandler(IOrderRepository orderRepository)
         }
 
         var items = request.Items
-            .Select(item => new OrderItemRequest
+            .GroupBy(item => item.Sku.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(group => new OrderItemRequest
             {
-                Sku = item.Sku.Trim(),
-                Quantity = item.Quantity
+                Sku = group.Key.ToUpperInvariant(),
+                Quantity = group.Sum(item => item.Quantity)
             })
             .ToList();
 

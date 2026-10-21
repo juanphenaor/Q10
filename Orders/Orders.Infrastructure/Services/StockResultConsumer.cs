@@ -53,27 +53,25 @@ public sealed class StockResultConsumer(IServiceScopeFactory scopeFactory, ILogg
 
                     using var scope = scopeFactory.CreateScope();
 
-                    var repository = scope.ServiceProvider
-                        .GetRequiredService<IOrderRepository>();
+                    var repository = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
+                    var notifier = scope.ServiceProvider.GetRequiredService<IOrderNotifier>();
 
                     switch (eventArgs.RoutingKey)
                     {
                         case "stock.reserved":
                             {
-                                var message =
-                                    JsonSerializer.Deserialize<StockReserved>(json)
-                                    ?? throw new JsonException(
-                                        "The StockReserved message is empty.");
+                                var message = JsonSerializer.Deserialize<StockReserved>(json)
+                                    ?? throw new JsonException("The StockReserved message is empty.");
 
-                                var updated = await repository.ConfirmAsync(
-                                    message,
-                                    stoppingToken);
+                                var updated = await repository.ConfirmAsync(message, stoppingToken);
 
-                                if (!updated)
+                                if (updated)
                                 {
-                                    logger.LogWarning(
-                                        "Order {OrderId} was not confirmed because it does not exist or is no longer pending.",
-                                        message.OrderId);
+                                    await notifier.NotifyStatusChangedAsync(message.OrderId, "Confirmed", stoppingToken);
+                                }
+                                else
+                                {
+                                    logger.LogWarning("Order {OrderId} was not confirmed because it does not exist or is no longer pending.", message.OrderId);
                                 }
 
                                 break;
@@ -81,28 +79,25 @@ public sealed class StockResultConsumer(IServiceScopeFactory scopeFactory, ILogg
 
                         case "stock.rejected":
                             {
-                                var message =
-                                    JsonSerializer.Deserialize<StockRejected>(json)
-                                    ?? throw new JsonException(
-                                        "The StockRejected message is empty.");
+                                var message = JsonSerializer.Deserialize<StockRejected>(json)
+                                    ?? throw new JsonException("The StockRejected message is empty.");
 
-                                var updated = await repository.RejectAsync(
-                                    message,
-                                    stoppingToken);
+                                var updated = await repository.RejectAsync(message, stoppingToken);
 
-                                if (!updated)
+                                if (updated)
                                 {
-                                    logger.LogWarning(
-                                        "Order {OrderId} was not rejected because it does not exist or is no longer pending.",
-                                        message.OrderId);
+                                    await notifier.NotifyStatusChangedAsync(message.OrderId, "Rejected", stoppingToken);
+                                }
+                                else
+                                {
+                                    logger.LogWarning("Order {OrderId} was not rejected because it does not exist or is no longer pending.", message.OrderId);
                                 }
 
                                 break;
                             }
 
                         default:
-                            throw new InvalidOperationException(
-                                $"Unsupported routing key: {eventArgs.RoutingKey}");
+                            throw new InvalidOperationException($"Unsupported routing key: {eventArgs.RoutingKey}");
                     }
 
                     await channel.BasicAckAsync(deliveryTag: eventArgs.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
@@ -121,8 +116,7 @@ public sealed class StockResultConsumer(IServiceScopeFactory scopeFactory, ILogg
 
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
-        catch (OperationCanceledException)
-            when (stoppingToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             logger.LogInformation("Stock result consumer is stopping.");
         }
