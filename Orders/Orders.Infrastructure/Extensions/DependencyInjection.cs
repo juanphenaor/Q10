@@ -12,7 +12,10 @@ namespace Orders.Infrastructure.Extensions
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<OrdersDbContext>(options => options.UseNpgsql(configuration.GetConnectionString("OrdersDatabase")));
+            var connectionString = configuration.GetConnectionString("OrdersDatabase")
+               ?? throw new InvalidOperationException("La cadena de conexión OrdersDatabase no está configurada.");
+
+            services.AddDbContext<OrdersDbContext>(options => options.UseNpgsql(connectionString));
 
             services.AddScoped<IOrderRepository, OrderRepository>();
 
