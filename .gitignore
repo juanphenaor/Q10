@@ -9,3 +9,13 @@
 **/bin/
 **/obj/
 /.env
+
+# Frontend dependencies and build artifacts
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.vite/
+
+# Frontend environment variables
+Frontend/.env
+Frontend/.env.*
+!Frontend/.env.example
