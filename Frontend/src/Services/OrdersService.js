@@ -30,6 +30,7 @@ export async function createOrder(orderData) {
     const errorBody = await response.json().catch(() => null)
     throw new Error(
       errorBody?.detail ??
+      errorBody?.message ??
       errorBody?.title ??
       `No se pudo crear el pedido (${response.status}).`,
     )

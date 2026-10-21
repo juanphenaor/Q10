@@ -7,66 +7,38 @@ namespace Backend.Tests;
 public sealed class OrderValidationTests
 {
     [Fact]
-    public void CreateOrderRequest_RequiresAtLeastOneItem()
+    public void CreateOrderRequest_RejectsInvalidClientItemsSkusAndQuantities()
     {
-        var request = new CreateOrderRequest
+        var emptyOrder = Validate(new CreateOrderRequest
         {
             ClientName = "María Pérez",
             Items = []
-        };
-
-        var results = Validate(request);
-
-        Assert.Contains(results, result =>
-            result.MemberNames.Contains(nameof(CreateOrderRequest.Items)));
-    }
-
-    [Fact]
-    public void CreateOrderRequest_RejectsBlankOrTooLongClientName()
-    {
-        var blankNameRequest = new CreateOrderRequest
+        });
+        var blankName = Validate(new CreateOrderRequest
         {
             ClientName = "   ",
             Items = [new OrderItemRequest { Sku = "SKU-1", Quantity = 1 }]
-        };
-        var tooLongNameRequest = new CreateOrderRequest
+        });
+        var tooLongName = Validate(new CreateOrderRequest
         {
             ClientName = new string('a', 201),
             Items = [new OrderItemRequest { Sku = "SKU-1", Quantity = 1 }]
-        };
+        });
+        var blankSku = Validate(new OrderItemRequest { Sku = "   ", Quantity = 1 });
+        var zeroQuantity = Validate(new OrderItemRequest { Sku = "SKU-1", Quantity = 0 });
+        var excessiveQuantity = Validate(new OrderItemRequest { Sku = "SKU-1", Quantity = 101 });
 
-        var blankNameResults = Validate(blankNameRequest);
-        var tooLongNameResults = Validate(tooLongNameRequest);
-
-        Assert.Contains(blankNameResults, result =>
+        Assert.Contains(emptyOrder, result =>
+            result.MemberNames.Contains(nameof(CreateOrderRequest.Items)));
+        Assert.Contains(blankName, result =>
             result.MemberNames.Contains(nameof(CreateOrderRequest.ClientName)));
-        Assert.Contains(tooLongNameResults, result =>
+        Assert.Contains(tooLongName, result =>
             result.MemberNames.Contains(nameof(CreateOrderRequest.ClientName)));
-    }
-
-    [Fact]
-    public void OrderItemRequest_RejectsBlankSkuAndNonPositiveQuantity()
-    {
-        var item = new OrderItemRequest
-        {
-            Sku = "   ",
-            Quantity = 0
-        };
-
-        var results = Validate(item);
-
-        Assert.Contains(results, result =>
+        Assert.Contains(blankSku, result =>
             result.MemberNames.Contains(nameof(OrderItemRequest.Sku)));
-        Assert.Contains(results, result =>
+        Assert.Contains(zeroQuantity, result =>
             result.MemberNames.Contains(nameof(OrderItemRequest.Quantity)));
-    }
-
-    [Fact]
-    public void OrderItemRequest_RejectsQuantityAbove100()
-    {
-        var results = Validate(new OrderItemRequest { Sku = "SKU-001", Quantity = 101 });
-
-        Assert.Contains(results, result =>
+        Assert.Contains(excessiveQuantity, result =>
             result.MemberNames.Contains(nameof(OrderItemRequest.Quantity)));
     }
 

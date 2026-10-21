@@ -10,9 +10,19 @@ namespace Inventory.Infrastructure.Repositories
 {
     public class ProductRepository(InventoryDbContext context) : IProductRepository
     {
-        public async Task<IReadOnlyList<Product>> GetBySkusAsync(
-            IReadOnlyCollection<string> skus,
-            CancellationToken cancellationToken)
+        public async Task<bool> AllSkusExistAsync(IReadOnlyCollection<string> skus, CancellationToken cancellationToken)
+        {
+            var requestedSkus = skus.Distinct(StringComparer.Ordinal).ToArray();
+            var existingCount = await context.Products
+                .Where(product => requestedSkus.Contains(product.Sku))
+                .Select(product => product.Sku)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            return existingCount == requestedSkus.Length;
+        }
+
+        public async Task<IReadOnlyList<Product>> GetBySkusAsync(IReadOnlyCollection<string> skus, CancellationToken cancellationToken)
         {
             var requestedSkus = skus
                 .Distinct(StringComparer.Ordinal)
@@ -24,9 +34,7 @@ namespace Inventory.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<StockReservationResult> ReserveStockAsync(
-            OrderCreated order,
-            CancellationToken cancellationToken)
+        public async Task<StockReservationResult> ReserveStockAsync(OrderCreated order, CancellationToken cancellationToken)
         {
             if (order.OrderId == Guid.Empty ||
                 order.Items is null ||
@@ -158,9 +166,7 @@ namespace Inventory.Infrastructure.Repositories
             return result;
         }
 
-        private static StockReservationResult Reject(
-            Guid orderId,
-            string code,
+        private static StockReservationResult Reject(Guid orderId, string code,
             string reason)
         {
             return new StockReservationResult

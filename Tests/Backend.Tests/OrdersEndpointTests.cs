@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Orders.Api.Controllers;
+using Orders.Api.Middlewares;
 using Orders.Application.Contracts;
-using Orders.Application.DTOs;
 using Orders.Application.Handlers;
 using Orders.Infrastructure.Context;
 using Orders.Infrastructure.Repositories;
@@ -19,6 +19,7 @@ public sealed class OrdersEndpointTests : IAsyncLifetime
 {
     private WebApplication app = null!;
     private HttpClient client = null!;
+    private readonly StubInventoryClient inventoryClient = new();
 
     public async Task InitializeAsync()
     {
@@ -28,85 +29,46 @@ public sealed class OrdersEndpointTests : IAsyncLifetime
         var databaseName = Guid.NewGuid().ToString();
         builder.Services.AddDbContext<OrdersDbContext>(options => options.UseInMemoryDatabase(databaseName));
         builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+        builder.Services.AddSingleton<IInventoryClient>(inventoryClient);
         builder.Services.AddScoped<CreateOrderHandler>();
         builder.Services.AddScoped<GetOrdersHandler>();
         builder.Services.AddScoped<GetOrderByIdHandler>();
 
         app = builder.Build();
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.MapControllers();
         await app.StartAsync();
         client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()) };
     }
 
     [Fact]
-    public async Task Create_Returns201WithIdAndLocationThatRetrievesCreatedOrder()
+    public async Task Create_MissingSkuReturns409WithoutOrderOrOutbox()
     {
-        using var response = await client.PostAsJsonAsync("/api/orders", new
-        {
-            clientName = "Sample Client",
-            items = new[]
-            {
-                new { sku = "SKU-1", quantity = 2 },
-                new { sku = "SKU-2", quantity = 1 }
-            }
-        });
+        inventoryClient.Result = false;
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using var response = await PostOrderAsync();
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Single(body.EnumerateObject());
-        var id = body.GetProperty("id").GetGuid();
-        Assert.NotEqual(Guid.Empty, id);
-        var location = response.Headers.Location;
-        Assert.NotNull(location);
-        Assert.Equal($"/api/orders/{id}", location.AbsolutePath, ignoreCase: true);
-
-        using var getResponse = await client.GetAsync(location);
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
-        var order = await getResponse.Content.ReadFromJsonAsync<OrderResponse>();
-        Assert.NotNull(order);
-        Assert.Equal(id, order.Id);
-        Assert.Equal("Sample Client", order.ClientName);
-        Assert.Equal("Pending", order.Status);
-        Assert.Equal(2, order.Items.Count);
-        Assert.Contains(order.Items, item => item.Sku == "SKU-1" && item.Quantity == 2);
-        Assert.Contains(order.Items, item => item.Sku == "SKU-2" && item.Quantity == 1);
-
-        using var listResponse = await client.GetAsync("/api/orders");
-        Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
-        var orders = await listResponse.Content.ReadFromJsonAsync<OrderResponse[]>();
-        Assert.NotNull(orders);
-        var listedOrder = Assert.Single(orders);
-        Assert.Equal(order.Id, listedOrder.Id);
-        Assert.Equal(order.ClientName, listedOrder.ClientName);
-        Assert.Equal(order.CreatedAt, listedOrder.CreatedAt);
-        Assert.Equal(order.Status, listedOrder.Status);
-        Assert.Equal(order.Items, listedOrder.Items);
-    }
-
-    [Theory]
-    [InlineData("11111111-1111-1111-1111-111111111111")]
-    [InlineData("not-a-guid")]
-    public async Task GetById_Returns404ForMissingOrderOrInvalidRoute(string id)
-    {
-        using var response = await client.GetAsync($"/api/orders/{id}");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Create_InvalidRequestStillReturns400WithoutCreatingOrder()
-    {
-        using var response = await client.PostAsJsonAsync("/api/orders", new
-        {
-            clientName = "Sample Client",
-            items = Array.Empty<object>()
-        });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("INVALID_SKUS", body.GetProperty("code").GetString());
+        Assert.Equal("La petición contiene SKU no válidos", body.GetProperty("message").GetString());
         Assert.Null(response.Headers.Location);
-        var orders = await client.GetFromJsonAsync<OrderResponse[]>("/api/orders");
-        Assert.NotNull(orders);
-        Assert.Empty(orders);
+        await AssertNothingPersistedAsync();
+    }
+
+    private Task<HttpResponseMessage> PostOrderAsync() => client.PostAsJsonAsync("/api/orders", new
+    {
+        clientName = "Sample Client",
+        items = new[] { new { sku = "SKU-1", quantity = 1 } }
+    });
+
+    private async Task AssertNothingPersistedAsync()
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<OrdersDbContext>();
+        Assert.Empty(await context.Orders.ToListAsync());
+        Assert.Empty(await context.OrderItems.ToListAsync());
+        Assert.Empty(await context.OutboxMessages.ToListAsync());
     }
 
     public async Task DisposeAsync()

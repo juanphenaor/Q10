@@ -1,4 +1,6 @@
 ﻿using System.Net;
+using Microsoft.AspNetCore.Mvc;
+using Orders.Application.Exceptions;
 
 namespace Orders.Api.Middlewares
 {
@@ -9,6 +11,29 @@ namespace Orders.Api.Middlewares
             try
             {
                 await next(context);
+            }
+            catch (InventoryUnavailableException exception)
+            {
+                logger.LogWarning(exception, InventoryMessages.ValidationFailed);
+
+                if (context.Response.HasStarted)
+                {
+                    throw;
+                }
+
+                context.Response.Clear();
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                await context.Response.WriteAsJsonAsync(new ProblemDetails
+                {
+                    Status = StatusCodes.Status503ServiceUnavailable,
+                    Title = "Service Unavailable",
+                    Detail = InventoryMessages.Unavailable,
+                    Extensions = { ["code"] = InventoryMessages.UnavailableCode }
+                }, options: null, contentType: "application/problem+json", cancellationToken: context.RequestAborted);
+            }
+            catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception exception)
             {

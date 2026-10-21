@@ -1,12 +1,13 @@
 ﻿using Orders.Application.Contracts;
 using Orders.Application.DTOs;
 using Orders.Application.Events;
+using Orders.Application.Exceptions;
 using Orders.Domain.Enumerations;
 using Orders.Domain.Models;
 
 namespace Orders.Application.Handlers;
 
-public class CreateOrderHandler(IOrderRepository orderRepository)
+public class CreateOrderHandler(IOrderRepository orderRepository, IInventoryClient inventoryClient)
 {
     public async Task<Guid> HandleAsync(CreateOrderRequest request, CancellationToken cancellationToken)
     {
@@ -35,6 +36,12 @@ public class CreateOrderHandler(IOrderRepository orderRepository)
             throw new ArgumentException(
                 $"La cantidad total del SKU {exceeded.Sku} no puede superar {OrderItemRequest.MaxQuantity}.",
                 nameof(request));
+        }
+
+        var skus = items.Select(item => item.Sku).ToArray();
+        if (!await inventoryClient.AllSkusExistAsync(skus, cancellationToken))
+        {
+            throw new InventoryException(InventoryMessages.InvalidSkusCode, InventoryMessages.InvalidSkus);
         }
 
         var order = new Order

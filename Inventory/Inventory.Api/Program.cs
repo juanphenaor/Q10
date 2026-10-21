@@ -1,4 +1,5 @@
 using Inventory.Api.Middlewares;
+using Inventory.Application.Handlers;
 using Inventory.Domain.Models;
 using Inventory.Infrastructure.Context;
 using Inventory.Infrastructure.Extensions;
@@ -11,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<ValidateSkusHandler>();
 
 var app = builder.Build();
 
