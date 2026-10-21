@@ -10,7 +10,20 @@ namespace Orders.Application.Handlers
     {
         public async Task<Guid> HandleAsync(CreateOrderRequest request, CancellationToken cancellationToken)
         {
-            var inventoryResponse = await inventoryClient.CheckAvailabilityAsync(request.Items, cancellationToken);
+            if (request.CustomerId == Guid.Empty)
+            {
+                throw new ArgumentException("El identificador del cliente no puede estar vacío.");
+            }
+
+            var items = request.Items
+                .Select(item => new OrderItemRequest
+                {
+                    Sku = item.Sku.Trim(),
+                    Quantity = item.Quantity
+                })
+                .ToList();
+
+            var inventoryResponse = await inventoryClient.CheckAvailabilityAsync(items, cancellationToken);
 
             var order = new Order
             {
@@ -18,9 +31,9 @@ namespace Orders.Application.Handlers
                 CustomerId = request.CustomerId,
                 CreatedAt = DateTime.UtcNow,
                 Status = OrderStatus.Pending,
-                Items = request.Items.Select(item =>
+                Items = items.Select(item =>
                 {
-                    var inventoryItem = inventoryResponse.Items.FirstOrDefault(product => product.Sku == item.Sku)
+                    var inventoryItem = inventoryResponse.Items.FirstOrDefault(product => string.Equals(product.Sku, item.Sku, StringComparison.OrdinalIgnoreCase))
                         ?? throw new InvalidOperationException($"Inventory no devolvió el SKU solicitado: {item.Sku}");
 
                     return new OrderItem
