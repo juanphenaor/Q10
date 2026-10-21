@@ -1,3 +1,4 @@
+using Orders.Api.Middlewares;
 using Orders.Application.Handlers;
 using Orders.Infrastructure.Extensions;
 
@@ -13,6 +14,7 @@ builder.Services.AddScoped<CreateOrderHandler>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 

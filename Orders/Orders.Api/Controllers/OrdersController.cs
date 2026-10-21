@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Orders.Application.DTOs;
 using Orders.Application.Exceptions;
 using Orders.Application.Handlers;
-using static Orders.Application.Exceptions.InsufficientInventoryException;
 
 namespace Orders.Api.Controllers
 {
