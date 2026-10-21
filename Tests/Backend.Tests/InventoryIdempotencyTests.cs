@@ -12,17 +12,24 @@ public sealed class InventoryIdempotencyTests
 {
     private const string ConnectionStringVariable = "TEST_INVENTORY_DATABASE";
 
-    [PostgreSqlFact]
+    [Fact]
     public async Task ReserveStockAsync_ReprocessingOrderReturnsStoredResultWithoutDeductingStockAgain()
     {
-        var connectionString = Environment.GetEnvironmentVariable(ConnectionStringVariable)!;
-        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString);
+        var connectionString = Environment.GetEnvironmentVariable(ConnectionStringVariable);
 
-        if (string.IsNullOrWhiteSpace(connectionStringBuilder.Database) ||
-            !connectionStringBuilder.Database.Contains("test", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                $"The {ConnectionStringVariable} database name must contain 'test' to prevent using an application database.");
+                $"The {ConnectionStringVariable} environment variable is required. Run `docker compose --profile test run --rm backend-tests`.");
+        }
+
+        var connectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString);
+
+        if (!string.Equals(connectionStringBuilder.Host, "inventory-db", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(connectionStringBuilder.Database, "InventoryDb", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                $"The {ConnectionStringVariable} connection must target the InventoryDb database on the inventory-db Docker Compose service.");
         }
 
         var options = new DbContextOptionsBuilder<InventoryDbContext>()
@@ -72,18 +79,6 @@ public sealed class InventoryIdempotencyTests
                 context.ProcessedOrders.Where(processedOrder => processedOrder.OrderId == orderId));
             context.Products.RemoveRange(context.Products.Where(product => product.Sku == sku));
             await context.SaveChangesAsync();
-        }
-    }
-}
-
-public sealed class PostgreSqlFactAttribute : FactAttribute
-{
-    public PostgreSqlFactAttribute()
-    {
-        if (string.IsNullOrWhiteSpace(
-                Environment.GetEnvironmentVariable("TEST_INVENTORY_DATABASE")))
-        {
-            Skip = "Set TEST_INVENTORY_DATABASE to a dedicated PostgreSQL test database to run this integration test.";
         }
     }
 }

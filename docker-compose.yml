@@ -64,6 +64,17 @@ services:
       timeout: 5s
       retries: 10
 
+  backend-tests:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: Tests/Backend.Tests/Dockerfile
+    environment:
+      TEST_INVENTORY_DATABASE: "Host=inventory-db;Port=5432;Database=InventoryDb;Username=postgres;Password=${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+
   rabbitmq:
     image: rabbitmq:4-management
     ports:
