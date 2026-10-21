@@ -13,6 +13,91 @@ namespace Backend.Tests;
 public sealed class OrderRepositoryTests
 {
     [Fact]
+    public async Task GetByIdAsync_ReturnsOnlyRequestedOrderWithItemsWithoutTracking()
+    {
+        await using var context = CreateContext();
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+            ClientName = "Sample Client",
+            CreatedAt = DateTime.UtcNow,
+            Status = OrderStatus.Confirmed,
+            Items =
+            [
+                new OrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    Sku = "SKU-1",
+                    Quantity = 2,
+                    UnitPrice = 12.50m
+                }
+            ]
+        };
+        context.Orders.AddRange(order, new Order
+        {
+            Id = Guid.NewGuid(),
+            ClientName = "Other Client",
+            CreatedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var result = await new OrderRepository(context).GetByIdAsync(order.Id, CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal(order.Id, result.Id);
+        Assert.Equal(order.ClientName, result.ClientName);
+        Assert.Equal(order.CreatedAt, result.CreatedAt);
+        Assert.Equal(order.Status, result.Status);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(order.Items[0].Id, item.Id);
+        Assert.Equal("SKU-1", item.Sku);
+        Assert.Equal(2, item.Quantity);
+        Assert.Equal(12.50m, item.UnitPrice);
+        Assert.Empty(context.ChangeTracker.Entries());
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_AndHandler_ReturnNullWhenOrderDoesNotExist()
+    {
+        await using var context = CreateContext();
+        var repository = new OrderRepository(context);
+        var id = Guid.NewGuid();
+
+        Assert.Null(await repository.GetByIdAsync(id, CancellationToken.None));
+        Assert.Null(await new GetOrderByIdHandler(repository).HandleAsync(id, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task GetOrderByIdHandler_ReturnsSameDetailsAsList()
+    {
+        await using var context = CreateContext();
+        var repository = new OrderRepository(context);
+        var id = await new CreateOrderHandler(repository).HandleAsync(
+            new CreateOrderRequest
+            {
+                ClientName = "Sample Client",
+                Items =
+                [
+                    new OrderItemRequest { Sku = "SKU-1", Quantity = 2 },
+                    new OrderItemRequest { Sku = "SKU-2", Quantity = 1 }
+                ]
+            },
+            CancellationToken.None);
+        context.ChangeTracker.Clear();
+
+        var result = await new GetOrderByIdHandler(repository).HandleAsync(id, CancellationToken.None);
+        var listedOrder = Assert.Single(await new GetOrdersHandler(repository).HandleAsync(CancellationToken.None));
+
+        Assert.NotNull(result);
+        Assert.Equal(listedOrder.Id, result.Id);
+        Assert.Equal(listedOrder.ClientName, result.ClientName);
+        Assert.Equal(listedOrder.CreatedAt, result.CreatedAt);
+        Assert.Equal(listedOrder.Status, result.Status);
+        Assert.Equal(listedOrder.Items, result.Items);
+    }
+
+    [Fact]
     public async Task CreateOrderHandler_AssignsServerValuesAndTrimsClientName()
     {
         await using var context = CreateContext();

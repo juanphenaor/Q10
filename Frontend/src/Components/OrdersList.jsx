@@ -124,7 +124,7 @@ function OrdersList({ orders, isLoading = false, error = '' }) {
 
           <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-sm">
-              <thead className="bg-neutral-50 text-neutral-500">
+              <thead className="bg-brand-600 color-neutral-700">
                 <tr>
                   <th className="px-5 py-3 font-medium">Pedido</th>
                   <th className="px-5 py-3 font-medium">Cliente</th>

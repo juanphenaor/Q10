@@ -21,6 +21,14 @@ namespace Orders.Infrastructure.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            return await context.Orders
+                .AsNoTracking()
+                .Include(order => order.Items)
+                .SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
+        }
+
         public async Task AddAsync(Order order, OrderCreated orderCreated, CancellationToken cancellationToken)
         {
             await context.OutboxMessages.AddAsync(new OutboxMessage

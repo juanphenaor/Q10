@@ -20,6 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\Orders\Orders.Api\Orders.Api.csproj" />
     <ProjectReference Include="..\..\Inventory\Inventory.Infrastructure\Inventory.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Orders\Orders.Application\Orders.Application.csproj" />
     <ProjectReference Include="..\..\Orders\Orders.Infrastructure\Orders.Infrastructure.csproj" />

@@ -29,6 +29,7 @@ builder.Services.AddScoped<IOrderNotifier, NotificationsService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CreateOrderHandler>();
 builder.Services.AddScoped<GetOrdersHandler>();
+builder.Services.AddScoped<GetOrderByIdHandler>();
 
 var app = builder.Build();
 
