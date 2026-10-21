@@ -5,7 +5,9 @@ namespace Orders.Application.DTOs
     public class CreateOrderRequest
     {
         [Required]
-        public Guid CustomerId { get; set; }
+        [StringLength(200)]
+        [RegularExpression(@".*\S.*")]
+        public string ClientName { get; set; } = string.Empty;
 
         [Required]
         [MinLength(1, ErrorMessage = "La orden debe contener al menos un producto.")]

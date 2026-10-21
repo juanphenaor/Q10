@@ -3,4 +3,5 @@
   <Project Path="Inventory.Application/Inventory.Application.csproj" />
   <Project Path="Inventory.Domain/Inventory.Domain.csproj" />
   <Project Path="Inventory.Infrastructure/Inventory.Infrastructure.csproj" />
+  <Project Path="../Tests/Backend.Tests/Backend.Tests.csproj" />
 </Solution>

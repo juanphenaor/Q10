@@ -9,7 +9,7 @@ public static class OrderMapper
     {
         return new OrderResponse(
             order.Id,
-            order.CustomerId,
+            order.ClientName,
             new DateTimeOffset(DateTime.SpecifyKind(order.CreatedAt, DateTimeKind.Utc)),
             order.Status.ToString(),
             order.Items

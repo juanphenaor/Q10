@@ -3,4 +3,5 @@
   <Project Path="Orders.Application/Orders.Application.csproj" Id="f160c322-2734-49f5-996b-50fceb2277dc" />
   <Project Path="Orders.Domain/Orders.Domain.csproj" Id="d548c17e-669a-429a-8a30-7bd505943645" />
   <Project Path="Orders.Infrastructure/Orders.Infrastructure.csproj" Id="40d447d5-855f-4537-914e-f8c7b4b907eb" />
+  <Project Path="../Tests/Backend.Tests/Backend.Tests.csproj" />
 </Solution>

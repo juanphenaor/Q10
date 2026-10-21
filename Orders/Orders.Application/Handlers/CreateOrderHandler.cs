@@ -10,10 +10,14 @@ public class CreateOrderHandler(IOrderRepository orderRepository)
 {
     public async Task<Guid> HandleAsync(CreateOrderRequest request, CancellationToken cancellationToken)
     {
-        if (request.CustomerId == Guid.Empty)
+        ArgumentNullException.ThrowIfNull(request);
+
+        var clientName = request.ClientName?.Trim();
+        if (string.IsNullOrWhiteSpace(clientName) || clientName.Length > 200)
         {
             throw new ArgumentException(
-                "El identificador del cliente no puede estar vacío.");
+                "El nombre del cliente es obligatorio y no puede superar 200 caracteres.",
+                nameof(request));
         }
 
         var items = request.Items
@@ -28,7 +32,7 @@ public class CreateOrderHandler(IOrderRepository orderRepository)
         var order = new Order
         {
             Id = Guid.NewGuid(),
-            CustomerId = request.CustomerId,
+            ClientName = clientName,
             CreatedAt = DateTime.UtcNow,
             Status = OrderStatus.Pending,
             Items = items.Select(item => new OrderItem

@@ -6,6 +6,7 @@ COPY Inventory/Inventory.Api/Inventory.Api.csproj ./Inventory/Inventory.Api/
 COPY Inventory/Inventory.Application/Inventory.Application.csproj ./Inventory/Inventory.Application/
 COPY Inventory/Inventory.Domain/Inventory.Domain.csproj ./Inventory/Inventory.Domain/
 COPY Inventory/Inventory.Infrastructure/Inventory.Infrastructure.csproj ./Inventory/Inventory.Infrastructure/
+COPY Tests/Backend.Tests/Backend.Tests.csproj ./Tests/Backend.Tests/
 
 RUN dotnet restore ./Inventory/Inventory.slnx
 

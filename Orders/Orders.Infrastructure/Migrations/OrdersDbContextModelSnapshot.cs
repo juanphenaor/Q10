@@ -28,11 +28,12 @@ namespace Orders.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CustomerId")
-                        .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");

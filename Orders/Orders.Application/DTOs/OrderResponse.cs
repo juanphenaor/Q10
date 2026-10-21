@@ -1,3 +1,3 @@
 namespace Orders.Application.DTOs;
 
-public sealed record OrderResponse(Guid Id, Guid CustomerId, DateTimeOffset CreatedAt, string Status, IReadOnlyList<OrderItemResponse> Items);
+public sealed record OrderResponse(Guid Id, string ClientName, DateTimeOffset CreatedAt, string Status, IReadOnlyList<OrderItemResponse> Items);

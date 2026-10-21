@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 
 const MAX_QUANTITY = 2147483647
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const MAX_CLIENT_NAME_LENGTH = 200
 
 function CreateOrderModal({ onClose, onSubmit }) {
-  const [customerId, setCustomerId] = useState('')
+  const [clientName, setClientName] = useState('')
   const [items, setItems] = useState([{ id: 0, sku: '', quantity: '1' }])
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -41,9 +41,14 @@ function CreateOrderModal({ onClose, onSubmit }) {
     if (submitting.current) return
     setError('')
 
-    const normalizedCustomerId = customerId.trim()
-    if (!UUID_PATTERN.test(normalizedCustomerId)) {
-      setError('Ingresa un ID del cliente con formato UUID válido.')
+    const normalizedClientName = clientName.trim()
+    if (!normalizedClientName) {
+      setError('El nombre del cliente no puede estar vacío ni en blanco.')
+      return
+    }
+
+    if (normalizedClientName.length > MAX_CLIENT_NAME_LENGTH) {
+      setError(`El nombre del cliente no puede superar ${MAX_CLIENT_NAME_LENGTH} caracteres.`)
       return
     }
 
@@ -83,7 +88,7 @@ function CreateOrderModal({ onClose, onSubmit }) {
 
     try {
       await onSubmit({
-        customerId: normalizedCustomerId,
+        clientName: normalizedClientName,
         items: Array.from(groupedItems, ([sku, quantity]) => ({ sku, quantity })),
       })
     } catch (err) {
@@ -140,18 +145,19 @@ function CreateOrderModal({ onClose, onSubmit }) {
         <form onSubmit={handleSubmit} noValidate aria-busy={isSubmitting}>
           <fieldset disabled={isSubmitting} className="space-y-5">
             <div>
-              <label htmlFor="customerId" className="mb-1.5 block text-sm font-medium text-neutral-700">
-                ID del cliente
+              <label htmlFor="clientName" className="mb-1.5 block text-sm font-medium text-neutral-700">
+                Nombre del cliente
               </label>
               <input
-                id="customerId"
-                name="customerId"
-                value={customerId}
-                onChange={(event) => setCustomerId(event.target.value)}
+                id="clientName"
+                name="clientName"
+                value={clientName}
+                onChange={(event) => setClientName(event.target.value)}
+                maxLength={MAX_CLIENT_NAME_LENGTH}
                 required
                 autoFocus
                 className="w-full rounded-lg border border-neutral-200 px-3 py-2.5 text-neutral-900 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-                placeholder="11111111-1111-1111-1111-111111111111"
+                placeholder="Ej. María Pérez"
               />
             </div>
 

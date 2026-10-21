@@ -8,7 +8,6 @@ namespace Orders.Domain.Enumerations
     {
         Pending,
         Confirmed,
-        Rejected,
-        Cancelled
+        Rejected
     }
 }

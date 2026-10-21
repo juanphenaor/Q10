@@ -23,7 +23,7 @@ function OrdersList({ orders, isLoading = false, error = '' }) {
 
     return (
       String(order.id ?? '').toLowerCase().includes(searchValue) ||
-      String(order.customerId ?? '').toLowerCase().includes(searchValue) ||
+      String(order.clientName ?? '').toLowerCase().includes(searchValue) ||
       order.items.some((item) =>
         String(item.sku ?? '').toLowerCase().includes(searchValue),
       )
@@ -96,7 +96,7 @@ function OrdersList({ orders, isLoading = false, error = '' }) {
                   <div className="min-w-0">
                     <p className="break-words font-semibold">{order.id}</p>
                     <p className="mt-1 text-xs text-neutral-500">
-                      Cliente: {order.customerId}
+                      Cliente: {order.clientName}
                     </p>
                   </div>
 
@@ -127,7 +127,7 @@ function OrdersList({ orders, isLoading = false, error = '' }) {
               <thead className="bg-neutral-50 text-neutral-500">
                 <tr>
                   <th className="px-5 py-3 font-medium">Pedido</th>
-                  <th className="px-5 py-3 font-medium">ID del cliente</th>
+                  <th className="px-5 py-3 font-medium">Cliente</th>
                   <th className="px-5 py-3 font-medium">Artículos</th>
                   <th className="px-5 py-3 font-medium">Estado</th>
                 </tr>
@@ -142,7 +142,7 @@ function OrdersList({ orders, isLoading = false, error = '' }) {
                     <td className="whitespace-nowrap px-5 py-4 font-medium">
                       {order.id}
                     </td>
-                    <td className="px-5 py-4">{order.customerId}</td>
+                    <td className="px-5 py-4">{order.clientName}</td>
                     <td className="px-5 py-4">
                       <ul className="space-y-1">
                         {order.items.map((item) => (
