@@ -1,46 +1,39 @@
-﻿using Orders.Application.Contracts;
-using Orders.Application.DTOs;
-using System;
-using System.Collections.Generic;
+﻿
 using System.Net.Http.Json;
-using System.Text;
-using static Orders.Application.Exceptions.InsufficientInventoryException;
+using Orders.Application.Contracts;
+using Orders.Application.DTOs;
+using Orders.Application.Exceptions;
 
-namespace Orders.Infrastructure.Clients
+namespace Orders.Infrastructure.Clients;
+
+public class InventoryClient(HttpClient httpClient) : IInventoryClient
 {
-    public class InventoryClient(HttpClient httpClient) : IInventoryClient
+    public async Task<InventoryAvailabilityResponse> CheckAvailabilityAsync(
+        IEnumerable<OrderItemRequest> items,
+        CancellationToken cancellationToken)
     {
-        public async Task<InventoryAvailabilityResponse> CheckAvailabilityAsync(IEnumerable<OrderItemRequest> items, CancellationToken cancellationToken)
+        var response = await httpClient.PostAsJsonAsync(
+            "api/inventory/availability",
+            new { Items = items },
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await httpClient.PostAsJsonAsync(
-                "api/inventory/availability",
-                new { Items = items },
+            var error = await response.Content.ReadFromJsonAsync<InventoryErrorResponse>(
                 cancellationToken);
 
-            if (!response.IsSuccessStatusCode)
+            if (error is null)
             {
-                var error = await response.Content
-                    .ReadFromJsonAsync<InventoryErrorResponse>(
-                        cancellationToken);
-
-                if (error is not null)
-                {
-                    throw new InventoryException(error.Code, error.Message);
-                }
-
-                response.EnsureSuccessStatusCode();
+                throw new HttpRequestException(
+                    $"Inventory respondió con HTTP {(int)response.StatusCode}.");
             }
 
-            var result = await response.Content.ReadFromJsonAsync<AvailabilityResponse>(
-                cancellationToken);
-
-            return await response.Content.ReadFromJsonAsync<InventoryAvailabilityResponse>(cancellationToken)
-                ?? throw new InvalidOperationException("Inventory devolvió una respuesta vacía o inválida.");
+            throw new InventoryException(error.Code, error.Message);
         }
 
-        private sealed class AvailabilityResponse
-        {
-            public bool Available { get; set; }
-        }
+        return await response.Content.ReadFromJsonAsync<InventoryAvailabilityResponse>(
+            cancellationToken)
+            ?? throw new InvalidOperationException(
+                "Inventory devolvió una respuesta vacía o inválida.");
     }
 }
