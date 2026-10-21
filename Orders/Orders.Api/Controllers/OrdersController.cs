@@ -7,8 +7,17 @@ namespace Orders.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class OrdersController(CreateOrderHandler handler) : ControllerBase
+    public class OrdersController(CreateOrderHandler handler, GetOrdersHandler getOrdersHandler) : ControllerBase
     {
+        
+        [HttpGet]
+        public async Task<ActionResult<IReadOnlyList<OrderResponse>>> GetAll(CancellationToken cancellationToken)
+        {
+            var orders = await getOrdersHandler.HandleAsync(cancellationToken);
+
+            return Ok(orders);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create(CreateOrderRequest request, CancellationToken cancellationToken)
         {

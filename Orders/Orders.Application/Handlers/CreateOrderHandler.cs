@@ -39,15 +39,7 @@ public class CreateOrderHandler(IOrderRepository orderRepository)
             }).ToList()
         };
 
-        var orderCreated = new OrderCreated
-        {
-            OrderId = order.Id,
-            Items = items.Select(item => new OrderCreatedItem
-            {
-                Sku = item.Sku,
-                Quantity = item.Quantity
-            }).ToList()
-        };
+        var orderCreated = new OrderCreated(order.Id, items.Select(item => new OrderCreatedItem(item.Sku, item.Quantity)).ToList());
 
         await orderRepository.AddAsync(order, orderCreated, cancellationToken);
 

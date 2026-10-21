@@ -11,6 +11,16 @@ namespace Orders.Infrastructure.Repositories
 {
     public class OrderRepository(OrdersDbContext context) : IOrderRepository
     {
+        public async Task<IReadOnlyList<Order>> GetAllAsync(CancellationToken cancellationToken)
+        {
+            return await context.Orders
+                .AsNoTracking()
+                .Include(order => order.Items)
+                .OrderByDescending(order => order.CreatedAt)
+                .ThenBy(order => order.Id)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task AddAsync(Order order, OrderCreated orderCreated, CancellationToken cancellationToken)
         {
             await context.OutboxMessages.AddAsync(new OutboxMessage

@@ -10,5 +10,10 @@ namespace Orders.Api.Hubs
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, GetOrderGroupName(orderId));
         }
+
+        public async Task UnsubscribeFromOrder(Guid orderId)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, GetOrderGroupName(orderId));
+        }
     }
 }

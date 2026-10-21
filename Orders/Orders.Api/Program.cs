@@ -13,14 +13,25 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
 builder.Services.AddScoped<IOrderNotifier, NotificationsService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<CreateOrderHandler>();
+builder.Services.AddScoped<GetOrdersHandler>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 await using (var scope = app.Services.CreateAsyncScope())
