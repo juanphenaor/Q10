@@ -29,6 +29,14 @@ public class CreateOrderHandler(IOrderRepository orderRepository)
             })
             .ToList();
 
+        var exceeded = items.FirstOrDefault(item => item.Quantity > OrderItemRequest.MaxQuantity);
+        if (exceeded is not null)
+        {
+            throw new ArgumentException(
+                $"La cantidad total del SKU {exceeded.Sku} no puede superar {OrderItemRequest.MaxQuantity}.",
+                nameof(request));
+        }
+
         var order = new Order
         {
             Id = Guid.NewGuid(),

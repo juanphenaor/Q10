@@ -54,6 +54,13 @@ static async Task SeedDevelopmentProductsAsync(WebApplication app)
             Sku = "SKU-002",
             UnitPrice = 18000m,
             AvailableQuantity = 100
+        },
+        new Product
+        {
+            Id = Guid.NewGuid(),
+            Sku = "SKU-003",
+            UnitPrice = 22000m,
+            AvailableQuantity = 100
         }
     };
     var seedSkus = seedProducts.Select(product => product.Sku).ToArray();

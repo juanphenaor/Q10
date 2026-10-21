@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-const MAX_QUANTITY = 2147483647
+const MAX_QUANTITY = 100
 const MAX_CLIENT_NAME_LENGTH = 200
 
 function CreateOrderModal({ onClose, onSubmit }) {

@@ -61,6 +61,15 @@ public sealed class OrderValidationTests
             result.MemberNames.Contains(nameof(OrderItemRequest.Quantity)));
     }
 
+    [Fact]
+    public void OrderItemRequest_RejectsQuantityAbove100()
+    {
+        var results = Validate(new OrderItemRequest { Sku = "SKU-001", Quantity = 101 });
+
+        Assert.Contains(results, result =>
+            result.MemberNames.Contains(nameof(OrderItemRequest.Quantity)));
+    }
+
     private static List<ValidationResult> Validate(object value)
     {
         var results = new List<ValidationResult>();

@@ -41,6 +41,10 @@ namespace Orders.Api.Controllers
 
                 return CreatedAtAction(nameof(GetById), new { id = orderId }, new { Id = orderId });
             }
+            catch (ArgumentException exception)
+            {
+                return BadRequest(new { message = exception.Message });
+            }
             catch (InventoryException exception)
             {
                 return Conflict(new
