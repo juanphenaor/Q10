@@ -22,6 +22,27 @@ namespace Inventory.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Inventory.Domain.Models.ProcessedOrder", b =>
+                {
+                    b.Property<Guid>("OrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsAccepted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("OrderId");
+
+                    b.ToTable("ProcessedOrders");
+                });
+
             modelBuilder.Entity("Inventory.Domain.Models.Product", b =>
                 {
                     b.Property<Guid>("Id")

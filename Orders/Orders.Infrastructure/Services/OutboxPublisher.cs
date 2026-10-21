@@ -35,12 +35,7 @@ public sealed class OutboxPublisher(IServiceScopeFactory scopeFactory, ILogger<O
 
                 await using var channel = await connection.CreateChannelAsync(channelOptions, stoppingToken);
 
-                await channel.ExchangeDeclareAsync(
-                    exchange: "orderflow.events",
-                    type: ExchangeType.Direct,
-                    durable: true,
-                    autoDelete: false,
-                    cancellationToken: stoppingToken);
+                await channel.ExchangeDeclareAsync(exchange: "orderflow.events", type: ExchangeType.Direct, durable: true, autoDelete: false, cancellationToken: stoppingToken);
 
                 await PublishPendingMessagesAsync(channel, stoppingToken);
 

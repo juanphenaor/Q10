@@ -39,10 +39,15 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__InventoryDatabase: "Host=inventory-db;Port=5432;Database=InventoryDb;Username=postgres;Password=${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: orderflow
+      RabbitMQ__Password: ${RABBITMQ_PASSWORD:?Define RABBITMQ_PASSWORD en .env}
     ports:
       - "8082:8080"
     depends_on:
       inventory-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   inventory-db:

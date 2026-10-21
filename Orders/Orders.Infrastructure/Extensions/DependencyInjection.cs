@@ -18,6 +18,7 @@ namespace Orders.Infrastructure.Extensions
             services.AddDbContext<OrdersDbContext>(options => options.UseNpgsql(connectionString));
 
             services.AddHostedService<OutboxPublisher>();
+            services.AddHostedService<StockResultConsumer>();
             services.AddScoped<IOrderRepository, OrderRepository>();
 
             return services;
