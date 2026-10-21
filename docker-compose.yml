@@ -79,6 +79,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?Define VITE_API_BASE_URL en .env}
+    ports:
+      - "5173:80"
+    depends_on:
+      - orders
 
 volumes:
   orders-data:

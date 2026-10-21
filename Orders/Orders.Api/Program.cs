@@ -15,12 +15,13 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("Frontend", policy =>
     {
         policy
-            .AllowAnyOrigin()
+            .WithOrigins("http://localhost:5173")
             .AllowAnyMethod()
-            .AllowAnyHeader();
+            .AllowAnyHeader()
+            .AllowCredentials();
     });
 });
 
@@ -31,7 +32,7 @@ builder.Services.AddScoped<GetOrdersHandler>();
 
 var app = builder.Build();
 
-app.UseCors("AllowAll");
+app.UseCors("Frontend");
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 await using (var scope = app.Services.CreateAsyncScope())
